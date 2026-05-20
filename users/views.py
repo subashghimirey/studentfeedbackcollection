@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
-from .serializers import UserRegistrationSerializer, UserReadSerializer
+from .serializers import UserRegistrationSerializer, UserReadSerializer, UserUpdateSerializer
 
 User = get_user_model()
 token_generator = PasswordResetTokenGenerator()
@@ -21,6 +21,10 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == 'create':
             return UserRegistrationSerializer
+        elif self.action in ['update', 'partial_update']:
+            # Use our new serializer when they send a PUT/PATCH request
+            return UserUpdateSerializer
+            
         return UserReadSerializer
 
     def get_permissions(self):
@@ -33,10 +37,14 @@ class UserViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def get_queryset(self):
+        user = self.request.user
         queryset = super().get_queryset()
-        params = self.request.query_params
 
-        # Simple search functionality
+        # SECURITY: If they are NOT an admin, they can ONLY fetch/update their own row
+        if not user.is_staff:
+            queryset = queryset.filter(id=user.id)
+
+        params = self.request.query_params
         if search := params.get("search"):
             queryset = queryset.filter(
                 Q(email__icontains=search) | 

@@ -7,4 +7,6 @@ urlpatterns = [
 
     path('api/', include('users.urls')),
     path('api/', include('surveys.urls')),
+    path('api/analytics/', include('analytics.urls')),
 ]
+

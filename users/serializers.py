@@ -27,5 +27,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 class UserReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'first_name', 'last_name', 'is_active', 'date_joined')
+        fields = ('id', 'email', 'first_name', 'last_name', 'is_active', 'date_joined', 'user_type')
         read_only_fields = fields  
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """
+    Serializer specifically for users updating their own profile.
+    Prevents them from changing their email, password, or active status here.
+    """
+    class Meta:
+        model = User
+        fields = ('id', 'first_name', 'last_name') # Fields they are allowed to change
