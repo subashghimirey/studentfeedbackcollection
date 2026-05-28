@@ -10,6 +10,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.decorators import action
 
+from core.permissions import IsAdminOrReadOnly, IsAdminUserAction
+
 from .serializers import UserRegistrationSerializer, UserReadSerializer, UserUpdateSerializer
 
 User = get_user_model()
@@ -32,7 +34,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return [AllowAny()]
         # Only admins can list all users or delete users
         elif self.action in ["list", "destroy"]:
-            return [IsAdminUser()]
+            return [IsAdminUserAction()]
         # Authenticated users can view/update their own data
         return [IsAuthenticated()]
 
@@ -40,8 +42,10 @@ class UserViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = super().get_queryset()
 
+        is_admin = user.is_superuser or getattr(user, 'user_type', None) == 'admin'
+
         # SECURITY: If they are NOT an admin, they can ONLY fetch/update their own row
-        if not user.is_staff:
+        if not is_admin:
             queryset = queryset.filter(id=user.id)
 
         params = self.request.query_params
@@ -51,7 +55,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 Q(first_name__icontains=search) | 
                 Q(last_name__icontains=search)
             )
-        
+        print("Final User queryset:", queryset)
         return queryset
 
     @action(detail=False, methods=["get"], url_path="me")

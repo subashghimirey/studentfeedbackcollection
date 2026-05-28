@@ -8,10 +8,9 @@ User = get_user_model()
 RATING_CHOICES = [(i, str(i)) for i in range(1, 6)]
 
 SEMESTER_CHOICES = [
-    ('SPRING', 'Spring'),
-    ('SUMMER', 'Summer'),
-    ('FALL', 'Fall'),
-    ('WINTER', 'Winter')
+    ("T1", "Term 1"),
+    ("T2", "Term 2"),
+    ("T3", "Term 3"),
 ]
 
 SENTIMENT_CHOICES = [

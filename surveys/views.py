@@ -1,33 +1,37 @@
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from core.permissions import IsAdminOrReadOnly, IsAdminUserAction
+
 from .models import Course, Instructor, Feedback
 from .serializers import CourseSerializer, InstructorSerializer, FeedbackSerializer
-
 from .services.sentiment_service import calculate_hybrid_sentiment
 
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [AllowAny()]  # allow anyone to view courses
-        return [IsAdminUser()]  # only admin can modify
+    # This automatically handles the "allow any read, admins modify" rule
+    permission_classes = [IsAdminOrReadOnly] 
 
 
 class InstructorViewSet(viewsets.ModelViewSet):
     queryset = Instructor.objects.all()
     serializer_class = InstructorSerializer
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [AllowAny()]  # allow anyone to view instructors
-        return [IsAdminUser()] 
+    permission_classes = [IsAdminOrReadOnly]
 
 
 class FeedbackViewSet(viewsets.ModelViewSet):
     serializer_class = FeedbackSerializer
+
+    def get_permissions(self):
+        # Allow admins to delete feedbacks. Regular authenticated users can create/read.
+        if self.action == 'destroy':
+            return [IsAdminUserAction()]
+        elif self.action in ['update', 'partial_update']:
+            # Either let users update their own, or restrict to admin:
+            return [IsAdminUserAction()] 
+        
+        return [AllowAny()] # Adjust if you want only IsAuthenticated to post feedbacks
 
     def get_queryset(self):
         user = self.request.user
